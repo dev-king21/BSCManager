@@ -252,7 +252,7 @@ class BnbManager {
             "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
             "status" : "SUCCESS"
         }
-        this.sendToHyperledger(map);
+        // this.sendToHyperledger(map);
 
         return response;
 
@@ -346,22 +346,22 @@ class BnbManager {
             "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
             "status" : "SUCCESS"
         }
-        this.sendToHyperledger(map);
+        // this.sendToHyperledger(map);
 
         return balance / Math.pow(10,18);
     }
     
-    async sendBNB(keystore, password, toAddress, amount, chainId) {
-        let account = this.web3.eth.accounts.decrypt(keystore, password,false);
+    async sendBNB(privateKey, toAddress, amount, chainId) {
+        let account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainDepositPrivateKey);
         let wallet = this.web3.eth.accounts.wallet.add(account);
 
         // The gas price is determined by the last few blocks median gas price.
         const avgGasPrice = await this.web3.eth.getGasPrice();
         console.log(avgGasPrice);
-
+        
         const createTransaction = await this.web3.eth.accounts.signTransaction(
             {
-               from: wallet.address,
+            //    from: wallet.address,
                to: toAddress,
                value: this.web3.utils.toWei(amount.toString(), 'ether'),
                gas: 21000,
@@ -394,8 +394,80 @@ class BnbManager {
             "fee" : avgGasPrice * 21000,
             "status" : "SUCCESS"
         }
-        this.sendToHyperledger(map);
+        // this.sendToHyperledger(map);
        
+        return createReceipt.transactionHash;
+    }
+    
+
+    async withdrawalBNB(toAddress, amount, idxTransaction, chainId) {
+        let account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
+        let wallet = this.web3.eth.accounts.wallet.add(account);
+
+        // The gas price is determined by the last few blocks median gas price.
+        const avgGasPrice = await this.web3.eth.getGasPrice();
+        const currNonce =await this.web3.eth.getTransactionCount(wallet.address)
+        console.log(avgGasPrice);
+        
+        const createTransaction = await this.web3.eth.accounts.signTransaction(
+            {
+            //    from: wallet.address,
+               to: toAddress,
+               value: this.web3.utils.toWei(amount.toString(), 'ether'),
+               gas: 21000,
+               gasPrice : avgGasPrice,
+               nonce: currNonce + idxTransaction
+            },
+            wallet.privateKey
+         );
+
+         console.log(createTransaction);
+      
+         // Deploy transaction
+        const createReceipt = await this.web3.eth.sendSignedTransaction(
+            createTransaction.rawTransaction
+        );
+
+        console.log(
+            `Transaction successful with hash: ${createReceipt.transactionHash}`
+        );
+
+        
+        return createReceipt.transactionHash;
+    }
+    async depositeBNB(fromAddress, amount, idxTransaction, chainId) {
+        let account = this.web3.eth.accounts.privateKeyToAccount(fromAddress);
+        let wallet = this.web3.eth.accounts.wallet.add(account);
+
+        // The gas price is determined by the last few blocks median gas price.
+        const avgGasPrice = await this.web3.eth.getGasPrice();
+        const currNonce =await this.web3.eth.getTransactionCount(wallet.address)
+        // console.log(avgGasPrice);
+        
+        const createTransaction = await this.web3.eth.accounts.signTransaction(
+            {
+            //    from: wallet.address,
+               to: process.env.mainDepositAddress,
+               value: this.web3.utils.toWei(amount.toString(), 'ether'),
+               gas: 21000,
+               gasPrice : avgGasPrice,
+               nonce: currNonce + idxTransaction
+            },
+            wallet.privateKey
+         );
+
+         console.log(createTransaction);
+      
+         // Deploy transaction
+        const createReceipt = await this.web3.eth.sendSignedTransaction(
+            createTransaction.rawTransaction
+        );
+
+        console.log(
+            `Transaction ${idxTransaction} successful with hash: ${createReceipt.transactionHash}`
+        );
+
+        
         return createReceipt.transactionHash;
     }
 
@@ -484,7 +556,7 @@ class BnbManager {
             'tx_type' : 'BINANCE',
             'body' : map
         }
-        console.log(submitModel);
+        // console.log(submitModel);
 
         axios({
             method: 'post',
