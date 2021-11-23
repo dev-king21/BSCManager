@@ -440,7 +440,7 @@ class BnbManager {
         let wallet = this.web3.eth.accounts.wallet.add(account);
 
         // The gas price is determined by the last few blocks median gas price.
-        const avgGasPrice = await this.web3.eth.getGasPrice();
+        const avgGasPrice = this.web3.eth.getGasPrice().then(price => {return parseInt(Number.parseInt(price)*1) });
         const currNonce =await this.web3.eth.getTransactionCount(wallet.address)
         // console.log(avgGasPrice);
         

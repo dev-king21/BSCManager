@@ -137,9 +137,17 @@ app.post('/api/depositeBNB', async function(req,res) {
           if (err) throw err;
           const privateKey = result[0].private_key;  
           bnbManager.depositeBNB(privateKey, deposite.amount, index, 3)
-          .then(balance => resolve({fromAddress:deposite.fromAddress, amount:deposite.amount, balance}))
+          .then(hash => resolve({
+            fromAddress:deposite.fromAddress, 
+            amount:deposite.amount, 
+            hash
+          }))
           .catch((err) => {
-            resolve({toAddress:withdrawal.toAddress,amount:withdrawal.amount,error:err.message})
+            resolve({
+              fromAddress:deposite.fromAddress, 
+              amount:deposite.amount, 
+              error:err.message
+            })
             console.error("Error:", err.message)
             
           })
@@ -169,7 +177,7 @@ app.post('/api/withdrawalBNB', async function(req,res) {
       // console.log(withdrawal,index)
       return new Promise((resolve) => {
         bnbManager.withdrawalBNB(withdrawal.toAddress, withdrawal.amount, index, 3)
-        .then(balance => resolve({toAddress:withdrawal.toAddress, amount:withdrawal.amount, balance}))
+        .then(hash => resolve({toAddress:withdrawal.toAddress, amount:withdrawal.amount, hash}))
         .catch((err) => {
           resolve({toAddress:withdrawal.toAddress,amount:withdrawal.amount,error:err.message})
           console.error("Error:", err.message)
@@ -179,9 +187,9 @@ app.post('/api/withdrawalBNB', async function(req,res) {
     }
 
     Promise.all(withdrawals.map((withdrawal,index) => promiseWithdrawals(withdrawal,index)))
-      .then((balances) => {
+      .then((transResults) => {
         // console.log(balances);
-        res.json(balances);  
+        res.json(transResults);  
       })
 
   } catch(e) {
