@@ -1,8 +1,10 @@
-import express from 'express';
-import BnbManager from "./src/centerpirme.js";
-import cors from 'cors';
-import mysql from 'mysql';
-import dotenv from 'dotenv';
+var express =require('express');
+var BnbManager =require("./src/centerpirme.js").BnbManager;
+var cors =require('cors');
+var mysql =require('mysql');
+var dotenv =require('dotenv');
+var axios = require('axios')
+
 dotenv.config()
 var con = mysql.createConnection({
   host: "localhost",
@@ -27,17 +29,15 @@ app.use(cors())
 app.use(express.json());
 
 app.post('/api/createWallet', (req, res) => {
-  // const password = req.body.password;
-  // let wallet = bnbManager.createAccount(password)
+
   let response = bnbManager.createAccount();
-  // console.log(response.wallet.address);
-  var sql = `INSERT INTO wallet (address, private_key) VALUES ('${response.wallet.address}', '${response.wallet.privateKey}')`;
-  // console.log(sql);
+
+  var sql = `INSERT INTO wallet (address, private_key) VALUES ('${response.address}', '${response.privateKey}')`;
   con.query(sql, function (err, result) {
     if (err) throw err;
-    console.log("1 record inserted");
+    // console.log("1 record inserted");
   });
-  // console.log(wallet);
+
   res.json(response);
 });
 
@@ -77,6 +77,86 @@ app.post('/api/bnbBalance', async function(req,res) {
       .then((balances) => {
         // console.log(balances);
         res.json(balances);  
+      })
+
+  } catch(e) {
+     return res.status(401).send({
+      message : e.message
+   });
+  }
+});
+
+app.post('/api/tokenBalances', async function(req,res) {
+  try {
+    // console.log("/api/tokenlist");
+    const addresses = req.body.address;
+    // console.log(addresses);
+
+    const promiseTokenBalance = (tokenAddress,address) => {
+      return new Promise((resolve) => {
+        bnbManager.getBEPTokenBalance(tokenAddress, address)
+        .then(balance => resolve(balance))
+        .catch((err) => {
+          resolve({tokenAddress,error:err.message})
+          console.error("Error:", err.message)
+          
+        })
+      }) 
+    }
+
+    const promiseTokenInfo = (address) => {
+
+
+      const parameters = {
+        module : "account",
+        action : "tokentx",
+        address : address,
+        page : 1,
+        offset : 0,
+        startblock : 0,
+        endblock: bnbManager.getCurrentBlockNumber(),
+        sort : "asc",
+        apikey : process.env.apiKey
+      }
+      const get_request_args = new URLSearchParams(parameters).toString();
+  
+      const options = {
+          url: process.env.etherscanUrl,
+          path: "/api?" + get_request_args,
+      }
+  
+      const url = `https://${options.url}${options.path}`
+      
+      return new Promise((resolve) => {
+      
+        axios({
+          method: 'get',
+          url: url,
+        })
+        .then((response) => {
+          var tokenList = response.data.result.map(res => {
+            return res.contractAddress;
+          })
+          var tokenList = [... new Set(tokenList)]
+          Promise.all(tokenList.map(tokenAddress => promiseTokenBalance(tokenAddress,address)))
+          .then((balances) =>{
+            resolve({address,balances})
+          })          
+        })
+        .catch((err) => {
+          resolve({address, error:err.message})
+          console.error("Error:", err.message)
+          
+        })
+      }) 
+    }
+
+    
+
+    Promise.all(addresses.map(address => promiseTokenInfo(address)))
+      .then((tokens) => {
+        // console.log(balances);
+        res.json(tokens);  
       })
 
   } catch(e) {
@@ -199,22 +279,20 @@ app.post('/api/withdrawalBNB', async function(req,res) {
   }
 });
 
-// app.post('/api/sendToken', async function(req,res) {
-//   try {
-//     const keystore = req.body.keystore;
-//     const password = req.body.password;
-//     const tokenContractAddress = req.body.tokenContractAddress;
-//     const toAddress = req.body.toAddress;
-//     const amount = req.body.amount;
-//     let balance = await bnbManager.sendToken(keystore,password,tokenContractAddress,toAddress,parseFloat(amount),3)
-//     console.log(balance);
-//     res.json(balance);
-//   } catch(e) {
-//      return res.status(401).send({
-//       message : e.message
-//    });
-//   }
-// });
+app.post('/api/sendToken', async function(req,res) {
+  try {
+      const privateKey = req.body.privateKey;
+      const toAddress = req.body.toAddress;
+      const amount = req.body.amount;
+      console.log("privateKey:", privateKey, "toAddress:", toAddress, "amount:", amount)
+      let balance = await bnbManager.sendBNB(privateKey,toAddress,amount,3)
+      console.log(balance);
+      res.json(balance);
+    } catch(e) {
+       return res.status(401).send({
+        message : e.message
+     });
+    }});
 
 app.listen(port, () => {
     console.log(`Server listening on the port::${port}`);

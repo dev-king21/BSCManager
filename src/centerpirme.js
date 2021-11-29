@@ -1,8 +1,8 @@
-import Web3 from 'web3';
-import fs from 'fs';
-import os from 'os';
-import process from 'process';
-import axios from 'axios'
+var Web3 = require('web3');
+var os = require('os');
+// var fs = require('fs');
+var process = require('process');
+var axios = require('axios')
 
 let bep20ABI = [
     {
@@ -232,30 +232,24 @@ class BnbManager {
         this.web3 = new Web3(new Web3.providers.HttpProvider(infuraUrl));
     }
 
-    //  createAccount(password) {
     createAccount() {
-        // let account = this.web3.eth.accounts.create(password);
-        let account = this.web3.eth.accounts.create();
-        let wallet = this.web3.eth.accounts.wallet.add(account);
-        // let keystore = wallet.encrypt(password);
+              
+        const ethers = require('ethers');
+        const bip39 = require('bip39');
+        const randomBytes = ethers.utils.randomBytes(16);
+        const mnemonic = bip39.entropyToMnemonic(randomBytes);
+        const walletMnemonic = ethers.Wallet.fromMnemonic(mnemonic)
+        const walletPrivateKey = new ethers.Wallet(walletMnemonic.privateKey)
 
         const response = {
-            // account: account,
-            wallet: wallet,
-            // keystore: keystore,
-        }
 
-        /* send to hyperledger */
-        const map = {
-            "action_type" : "WALLET_CREATE",
-            "wallet_address" : wallet.address,
-            "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
-            "status" : "SUCCESS"
+            mnemonic: mnemonic,
+            address: walletPrivateKey.address,
+            privateKey: walletMnemonic.privateKey
+
         }
-        // this.sendToHyperledger(map);
 
         return response;
-
     }
     
     importWalletByKeystore(keystore, password) {
@@ -278,6 +272,12 @@ class BnbManager {
         
 
         return response;
+    }
+
+    async getCurrentBlockNumber(){
+        const currentBlock = await this.web3.eth.getBlock("latest");
+        console.log("currentBlock", currentBlock.number);
+        return currentBlock.number;
     }
     
     
@@ -302,16 +302,17 @@ class BnbManager {
 
         return responsse;
     }
+
     
     async getBEPTokenBalance(tokenAddress , address) {
         // ABI to transfer ERC20 Token
         let abi = bep20ABI;
         // Get ERC20 Token contract instance
         let contract = new this.web3.eth.Contract(abi, tokenAddress);
-        console.log(contract);
+        // console.log(contract);
         // Get decimal
         let decimal = await contract.methods.decimals().call();
-        console.log(decimal);
+        // console.log(decimal);
         // Get Balance
         let balance = await contract.methods.balanceOf(address).call();
         // Get Name
@@ -319,19 +320,16 @@ class BnbManager {
         // Get Symbol
         let symbol = await contract.methods.symbol().call();
         /* send to hyperledger */
-        const map = {
-            "action_type" : "TOKEN_BALANCE",
-            "wallet_address" : address,
-            "balance" : balance / Math.pow(10,decimal),
-            "token_name" : name,
-            "token_symbol" : symbol,
-            "token_smart_contract" : tokenAddress,
-            "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
-            "status" : "SUCCESS"
-        }
-        this.sendToHyperledger(map);
-       
-        return balance / Math.pow(10,decimal);
+        // console.log(tokenAddress, balance);
+       let res = {};
+       res.tokenAddress = tokenAddress;
+       res.name = name;
+       res.symbol = symbol;
+       res.decimal = decimal;
+    //    res.balance = balance / Math.pow(10,decimal);
+    res.balance = balance;
+    //    console.log(res)
+        return res;
     }
 
     async getBnbBalance(address) {
@@ -381,20 +379,6 @@ class BnbManager {
             `Transaction successful with hash: ${createReceipt.transactionHash}`
         );
 
-        /* send to hyperledger */
-        const map = {
-            "action_type" : "SEND_BNB",
-            "from_wallet_address" : wallet.address,
-            "to_wallet_address" : toAddress,
-            "amount" : this.web3.utils.toWei(amount.toString(), 'ether'),
-            "tx_hash" : createReceipt.transactionHash,
-            "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
-            "gasLimit" : 21000,
-            "gasPrice" : avgGasPrice,
-            "fee" : avgGasPrice * 21000,
-            "status" : "SUCCESS"
-        }
-        // this.sendToHyperledger(map);
        
         return createReceipt.transactionHash;
     }
@@ -574,4 +558,4 @@ class BnbManager {
 
 }
 
-export default BnbManager;
+module.exports.BnbManager = BnbManager;
