@@ -107,46 +107,51 @@ app.post('/api/tokenBalances', async function(req,res) {
     const promiseTokenInfo = (address) => {
 
 
-      const parameters = {
-        module : "account",
-        action : "tokentx",
-        address : address,
-        page : 1,
-        offset : 0,
-        startblock : 0,
-        endblock: bnbManager.getCurrentBlockNumber(),
-        sort : "asc",
-        apikey : process.env.apiKey
-      }
-      const get_request_args = new URLSearchParams(parameters).toString();
-  
-      const options = {
-          url: process.env.etherscanUrl,
-          path: "/api?" + get_request_args,
-      }
-  
-      const url = `https://${options.url}${options.path}`
+      
       
       return new Promise((resolve) => {
+        
+        bnbManager.getCurrentBlockNumber().then((currblock) => {
+
+          const parameters = {
+            module : "account",
+            action : "tokentx",
+            address : address,
+            page : 1,
+            offset : 0,
+            startblock : 0,
+            endblock: currblock,
+            sort : "asc",
+            apikey : process.env.apiKey
+          }
+          const get_request_args = new URLSearchParams(parameters).toString();
       
-        axios({
-          method: 'get',
-          url: url,
-        })
-        .then((response) => {
-          var tokenList = response.data.result.map(res => {
-            return res.contractAddress;
+          const options = {
+              url: process.env.etherscanUrl,
+              path: "/api?" + get_request_args,
+          }
+      
+          const url = `https://${options.url}${options.path}`
+          // console.log(url);
+          axios({
+            method: 'get',
+            url: url,
           })
-          var tokenList = [... new Set(tokenList)]
-          Promise.all(tokenList.map(tokenAddress => promiseTokenBalance(tokenAddress,address)))
-          .then((balances) =>{
-            resolve({address,balances})
-          })          
-        })
-        .catch((err) => {
-          resolve({address, error:err.message})
-          console.error("Error:", err.message)
-          
+          .then((response) => {
+            var tokenList = response.data.result.map(res => {
+              return res.contractAddress;
+            })
+            var tokenList = [... new Set(tokenList)]
+            Promise.all(tokenList.map(tokenAddress => promiseTokenBalance(tokenAddress,address)))
+            .then((balances) =>{
+              resolve({address,balances})
+            })          
+          })
+          .catch((err) => {
+            resolve({address, error:err.message})
+            console.error("Error:", err.message)
+            
+          })
         })
       }) 
     }
