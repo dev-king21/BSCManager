@@ -325,7 +325,7 @@ class BnbManager {
        res.tokenAddress = tokenAddress;
        res.name = name;
        res.symbol = symbol;
-       res.decimal = decimal;
+       res.decimal = decimal;   
     //    res.balance = balance / Math.pow(10,decimal);
     res.balance = balance;
     //    console.log(res)
