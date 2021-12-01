@@ -203,34 +203,41 @@ app.post('/api/sendBnb', async function(req,res) {
    });
   }
 });
-app.post('/api/depositeBNB', async function(req,res) {
+app.post('/api/depositAsset', async function(req,res) {
   try {
   
     // const fromAddress = req.body.fromAddress;
     // const amount = req.body.amount;
-    const deposites = req.body.deposites;
+    const deposits = req.body.deposits;
 
     
     // console.log(sql);
-    const promiseDeposites = (deposite,index) => {
+    const promiseDeposits = (deposit,index) => {
       // console.log(withdrawal,index)
       return new Promise((resolve) => {
-        var fromAddress = deposite.fromAddress;
+        var fromAddress = deposit.fromAddress;
       
         var sql = `SELECT private_key from wallet WHERE address = '${fromAddress}'`;
         con.query(sql, async function (err, result) {
           if (err) throw err;
           const privateKey = result[0].private_key;  
-          bnbManager.depositeBNB(privateKey, deposite.amount, index, 3)
-          .then(hash => resolve({
-            fromAddress:deposite.fromAddress, 
-            amount:deposite.amount, 
+          bnbManager.sendAssetDedicatedGas(
+            privateKey, 
+            process.env.mainDepositAddress, 
+            deposit.asset, 
+            deposit.amount, 
+            index,
+            false
+          ).then(hash => resolve({
+            fromAddress:deposit.fromAddress, 
+            asset: deposit.asset,
+            amount:deposit.amount, 
             hash
           }))
           .catch((err) => {
             resolve({
-              fromAddress:deposite.fromAddress, 
-              amount:deposite.amount, 
+              fromAddress:deposit.fromAddress, 
+              amount:deposit.amount, 
               error:err.message
             })
             console.error("Error:", err.message)
@@ -240,7 +247,7 @@ app.post('/api/depositeBNB', async function(req,res) {
     }) 
     }
 
-    Promise.all(deposites.map((deposite,index) => promiseDeposites(deposite,index)))
+    Promise.all(deposits.map((deposit,index) => promiseDeposits(deposit,index)))
       .then((transactionHashs) => {
         console.log(transactionHashs);
         res.json(transactionHashs);  
@@ -253,18 +260,34 @@ app.post('/api/depositeBNB', async function(req,res) {
   }
 });
 
-app.post('/api/withdrawalBNB', async function(req,res) {
+app.post('/api/withdrawalAsset', async function(req,res) {
   try {
-  
       
     const withdrawals = req.body.withdrawals;
     const promiseWithdrawals = (withdrawal,index) => {
       // console.log(withdrawal,index)
       return new Promise((resolve) => {
-        bnbManager.withdrawalBNB(withdrawal.toAddress, withdrawal.amount, index, 3)
-        .then(hash => resolve({toAddress:withdrawal.toAddress, amount:withdrawal.amount, hash}))
+        bnbManager.sendAssetDedicatedGas(
+          process.env.mainWithdrawalPrivateKey, 
+          withdrawal.toAddress, 
+          withdrawal.asset, 
+          withdrawal.amount, 
+          index,
+          true
+        )
+        .then(hash => resolve({
+          toAddress : withdrawal.toAddress, 
+          asset : withdrawal.asset,
+          amount : withdrawal.amount,
+          hash
+        }))
         .catch((err) => {
-          resolve({toAddress:withdrawal.toAddress,amount:withdrawal.amount,error:err.message})
+          resolve({
+            toAddress:withdrawal.toAddress,
+            asset:withdrawal.asset,
+            amount:withdrawal.amount,
+            error:err.message
+          })
           console.error("Error:", err.message)
           
         })
@@ -273,7 +296,7 @@ app.post('/api/withdrawalBNB', async function(req,res) {
 
     Promise.all(withdrawals.map((withdrawal,index) => promiseWithdrawals(withdrawal,index)))
       .then((transResults) => {
-        // console.log(balances);
+        console.log(transResults);
         res.json(transResults);  
       })
 
