@@ -3,6 +3,7 @@ var os = require('os');
 // var fs = require('fs');
 var process = require('process');
 var axios = require('axios')
+let bulkSenderABI = [{"inputs":[{"internalType":"address","name":"tokenAddr","type":"address"},{"internalType":"address[]","name":"to","type":"address[]"},{"internalType":"uint256[]","name":"total","type":"uint256[]"}],"name":"send","outputs":[],"stateMutability":"nonpayable","type":"function"}]
 
 let bep20ABI = [
     {
@@ -419,16 +420,74 @@ class BnbManager {
     //    console.log(res)
         return res;
     }
+
+
+    async bulkSend(assetAddress, toAddresses, amounts){
+        try {
+            const account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
+            const wallet = this.web3.eth.accounts.wallet.add(account);
+            const avgGasPrice = await this.web3.eth.getGasPrice();
+            const newGasPrice = parseInt(Number.parseInt(avgGasPrice)*1.1)
+            const tokenContract = new this.web3.eth.Contract(bep20ABI, assetAddress, {from: wallet.address});
+            const bulkSenderContract = new this.web3.eth.Contract(bulkSenderABI, process.env.bulkSenderAddress, {from: wallet.address});
+            const decimals = await tokenContract.methods.decimals().call();
+            amounts = amounts.map(amount => amount * Math.pow(10,decimals));
+            const sumAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+            // approve from withdrawal wallet to bulksender
+            let nonce = await this.web3.eth.getTransactionCount(wallet.address)
+            // console.log("wallet address: ", wallet.address);
+            // console.log("spender: ", process.env.bulkSenderAddress);
+            // console.log("amount: ", sumAmount);
+            // console.log("nonce: ", nonce);
+            let gas = await tokenContract.methods.approve(process.env.bulkSenderAddress, sumAmount ).estimateGas({
+                from: wallet.address,
+                gasPrice:newGasPrice,
+                nonce: nonce
+            });
+            // console.log("approve gas: ",gas)
+            const result = await tokenContract.methods.approve(process.env.bulkSenderAddress, sumAmount ).send({
+                from: wallet.address,
+                gas: gas,
+                gasPrice:newGasPrice,
+                nonce: nonce
+            });
+            
+            // console.log("approve result: " , result)
+            nonce = await this.web3.eth.getTransactionCount(wallet.address);
+            gas = await bulkSenderContract.methods.send(assetAddress,toAddresses,amounts).estimateGas({
+                from: wallet.address,
+                gasPrice:newGasPrice,
+                nonce: nonce
+            });
+            // console.log("bulksender gas : ", gas)
+            const res = await bulkSenderContract.methods.send(assetAddress,toAddresses,amounts).send({
+                from: wallet.address,
+                gas: gas,
+                gasPrice:newGasPrice,
+                nonce: nonce
+            });
+            // console.log(res.transactionHash);
+            return res.transactionHash;
+
+        }catch(e){
+            console.log(e);
+            return e.message;
+        }
+        
+
+
+
+
+
+    }
     async sendToken(wallet, tokenContractAddress , toAddress , amount, gas, gasPrice, nonce ) {
         // ABI to transfer ERC20 Token
-        let abi = bep20ABI;
+        const abi = bep20ABI;
         // calculate ERC20 token amount
-        let tokenAmount = amount
+        const tokenAmount = amount
         // Get ERC20 Token contract instance
         let contract = new this.web3.eth.Contract(abi, tokenContractAddress, {from: wallet.address});
-        const data = await contract.methods.transfer(toAddress, tokenAmount).encodeABI();
-        // The gas price is determined by the last few blocks median gas price.
-        
+                
         const res = await contract.methods.transfer(toAddress, tokenAmount).send({
             from: wallet.address,
             gas: gas,
@@ -509,7 +568,7 @@ class BnbManager {
 
         transferFee = gasForTransfer*newGasPrice
         
-        console.log("gas for transfer:  ",gasForTransfer)
+        // console.log("gas for transfer:  ",gasForTransfer)
         if (balanceOfFeeCharger < transferFee + (21000)*avgGasPrice)  throw new Error("insufficient wei in FeeCharger")
         // console.log(balanceOfSender,amount*Math.pow(10,tokenDecimal),amount)
 
