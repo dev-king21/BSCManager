@@ -8,15 +8,16 @@ const axios = require('axios')
 const bodyParser = require('body-parser');
 const errorHandler = require('_middleware/error-handler');
 const authorize = require('_middleware/authorize')
-
+const config = require('config.json');
 
 
 dotenv.config()
+const { host, user, password, database } = config.database;
 var con = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "bnb_manager"
+  host: host,
+  user: user,
+  password: password,
+  database: database
 });
 
 con.connect(function(err) {
@@ -35,6 +36,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors())
 app.use(express.json());
+
+app.use(function (err, req, res, next) {
+  if (err.name === 'UnauthorizedError') {
+    return res.status(403).send({
+      success: false,
+      message: 'No token provided.'
+    });
+  }
+});
 
 
 app.use('/users', require('./users/users.controller'));
