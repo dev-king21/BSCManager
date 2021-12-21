@@ -1,0 +1,87 @@
+{
+	"compiler": {
+		"version": "0.8.0+commit.c7dfd78e"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "tokenAddr",
+						"type": "address"
+					},
+					{
+						"internalType": "address[]",
+						"name": "to",
+						"type": "address[]"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "total",
+						"type": "uint256[]"
+					}
+				],
+				"name": "send",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable[]",
+						"name": "to",
+						"type": "address[]"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "total",
+						"type": "uint256[]"
+					}
+				],
+				"name": "sendBnb",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"bulksender.sol": "Bep20Sender"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"bulksender.sol": {
+			"keccak256": "0x4c5d5e8511ce32fb20d807a72adaa25141dd2e65101182e7c96c6287bfbec2c1",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://57933135abd958380de2cd75f8c8a442668c52d85e35e0376429df1945fd1ff9",
+				"dweb:/ipfs/QmbwS2WhgrkpaeTs7GBbTsUQnn1JDyjBqxR7kipFt2NJiK"
+			]
+		}
+	},
+	"version": 1
+}

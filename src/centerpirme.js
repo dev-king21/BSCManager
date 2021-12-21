@@ -1,9 +1,10 @@
 var Web3 = require('web3');
+var BigNumber =require('bignumber.js');
 var os = require('os');
 // var fs = require('fs');
 var process = require('process');
 var axios = require('axios')
-let bulkSenderABI = [{"inputs":[{"internalType":"address","name":"tokenAddr","type":"address"},{"internalType":"address[]","name":"to","type":"address[]"},{"internalType":"uint256[]","name":"total","type":"uint256[]"}],"name":"send","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+let bulkSenderABI = [{"inputs":[{"internalType":"address","name":"tokenAddr","type":"address"},{"internalType":"address[]","name":"to","type":"address[]"},{"internalType":"uint256[]","name":"total","type":"uint256[]"}],"name":"send","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address payable[]","name":"to","type":"address[]"},{"internalType":"uint256[]","name":"total","type":"uint256[]"}],"name":"sendBnb","outputs":[],"stateMutability":"payable","type":"function"}]
 
 let bep20ABI = [
     {
@@ -480,11 +481,45 @@ class BnbManager {
 
 
     }
+    async bulkBnbSend(toAddresses, amounts){
+        try {
+            const account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
+            const wallet = this.web3.eth.accounts.wallet.add(account);
+            const avgGasPrice = await this.web3.eth.getGasPrice();
+            const newGasPrice = parseInt(Number.parseInt(avgGasPrice)*1.1)
+            const ethers = require('ethers');
+
+            const bulkSenderContract = new this.web3.eth.Contract(bulkSenderABI, process.env.bulkSenderAddress, {from: wallet.address});
+            amounts = amounts.map(amount => ethers.utils.parseEther(amount.toString()));
+            const zero = ethers.utils.parseEther("0");
+            const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), zero);
+            let nonce = await this.web3.eth.getTransactionCount(wallet.address)
+            nonce = await this.web3.eth.getTransactionCount(wallet.address);
+            let gas = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).estimateGas({
+                from: wallet.address,
+                value: sumAmount.toString(),
+                gasPrice:newGasPrice,
+                nonce: nonce
+            });
+            const res = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).send({
+                from: wallet.address,
+                value: sumAmount.toString(),
+                gas: gas,
+                gasPrice:newGasPrice,
+                nonce: nonce
+            });
+            return res.transactionHash;
+
+        }catch(e){
+            console.log(e);
+            return e.message;
+        }
+    }
     async sendToken(wallet, tokenContractAddress , toAddress , amount, gas, gasPrice, nonce ) {
         // ABI to transfer ERC20 Token
         const abi = bep20ABI;
         // calculate ERC20 token amount
-        const tokenAmount = amount
+        const tokenAmount = (BigNumber) (amount);
         // Get ERC20 Token contract instance
         let contract = new this.web3.eth.Contract(abi, tokenContractAddress, {from: wallet.address});
                 
@@ -502,7 +537,7 @@ class BnbManager {
         // ABI to transfer ERC20 Token
         let abi = bep20ABI;
         // calculate ERC20 token amount
-        let tokenAmount = amount
+        let tokenAmount = (BigNumber)(amount);
         // Get ERC20 Token contract instance
         let contract = new this.web3.eth.Contract(abi, tokenContractAddress, {from: wallet.address});
         const data = await contract.methods.transfer(toAddress, tokenAmount).encodeABI();

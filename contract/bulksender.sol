@@ -110,9 +110,20 @@ contract Bep20Sender {
 
     function send(address tokenAddr,address[] memory to,uint256[] memory total) public {
         IBEP20 token = IBEP20(tokenAddr);
-        for(uint8 i = 0;i<total.length;i++){
+        for(uint16 i = 0;i<total.length;i++){
             token.transferFrom(msg.sender, to[i], total[i]);
         }
+    }
+    function sendBnb(address payable[] memory to, uint256[] memory total) public payable{
+        uint256 total_sum = 0;
+        for(uint16 i = 0;i<total.length;i++){
+            total_sum += total[i];
+        }
+        require(total_sum <= msg.value, "insufficient BNB transferring");
+        for(uint16 i = 0;i<total.length;i++){
+            to[i].transfer(total[i]);
+        }
+
     }
 
 }

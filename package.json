@@ -19,6 +19,7 @@
     "dependencies": {
         "axios": "^0.21.1",
         "bcryptjs": "^2.4.3",
+        "bignumber": "^1.1.0",
         "bip39": "^3.0.4",
         "dotenv": "^10.0.0",
         "ethers": "^5.5.1",

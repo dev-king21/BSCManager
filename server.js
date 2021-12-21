@@ -279,7 +279,9 @@ app.post('/api/withdrawalAsset', authorize(), async function(req,res) {
     const assetAddress = req.body.assetAddress;
     const toAddresses = withdrawals.map(withdrawal=>withdrawal.toAddress);
     const amounts = withdrawals.map(withdrawal=>withdrawal.amount)
-    const result = await bnbManager.bulkSend(assetAddress,toAddresses,amounts);
+    let result;
+    if(assetAddress == 0) result = await bnbManager.bulkBnbSend(toAddresses,amounts);
+    else result = await bnbManager.bulkSend(assetAddress,toAddresses,amounts);
     res.json({hash: result});
 
   } catch(e) {
