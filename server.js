@@ -286,7 +286,9 @@ app.post('/api/withdrawalAsset', authorize(), async function(req,res) {
     res.json({hash: result});
 
   } catch(e) {
+    console.log(e);
      return res.status(401).send({
+       
       message : e.message
    });
   }

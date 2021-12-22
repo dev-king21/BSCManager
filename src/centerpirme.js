@@ -426,7 +426,7 @@ class BnbManager {
 
 
     async bulkSend(assetAddress, toAddresses, amounts){
-        try {
+        // try {
             const ethers = require('ethers');
             const account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
             const wallet = this.web3.eth.accounts.wallet.add(account);
@@ -474,10 +474,10 @@ class BnbManager {
             // console.log(res.transactionHash);
             return res.transactionHash;
 
-        }catch(e){
-            console.log(e);
-            return e.message;
-        }
+        // }catch(e){
+        //     console.log(e);
+        //     return e.message;
+        // }
         
 
 
@@ -486,7 +486,7 @@ class BnbManager {
 
     }
     async bulkBnbSend(toAddresses, amounts){
-        try {
+        // try {
             const ethers = require('ethers');
             const account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
             const wallet = this.web3.eth.accounts.wallet.add(account);
@@ -514,10 +514,10 @@ class BnbManager {
             });
             return res.transactionHash;
 
-        }catch(e){
-            console.log(e);
-            return e.message;
-        }
+        // }catch(e){
+        //     console.log(e);
+        //     return e.message;
+        // }
     }
     async sendToken(wallet, tokenContractAddress , toAddress , amount, gas, gasPrice, nonce ) {
         // ABI to transfer ERC20 Token
