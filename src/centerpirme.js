@@ -436,8 +436,7 @@ class BnbManager {
             const bulkSenderContract = new this.web3.eth.Contract(bulkSenderABI, process.env.bulkSenderAddress, {from: wallet.address});
             const decimals = await tokenContract.methods.decimals().call();
             amounts = amounts.map(amount => ethers.utils.parseUnits(amount.toString(),decimals));
-            const zero = ethers.utils.parseUnits("0", decimals);
-            const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), zero);
+            const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), ethers.utils.parseUnits("0", decimals));
             // approve from withdrawal wallet to bulksender
             let nonce = await this.web3.eth.getTransactionCount(wallet.address)
             // console.log("wallet address: ", wallet.address);
@@ -488,16 +487,15 @@ class BnbManager {
     }
     async bulkBnbSend(toAddresses, amounts){
         try {
+            const ethers = require('ethers');
             const account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
             const wallet = this.web3.eth.accounts.wallet.add(account);
             const avgGasPrice = await this.web3.eth.getGasPrice();
             const newGasPrice = parseInt(Number.parseInt(avgGasPrice)*1.1)
-            const ethers = require('ethers');
 
             const bulkSenderContract = new this.web3.eth.Contract(bulkSenderABI, process.env.bulkSenderAddress, {from: wallet.address});
             amounts = amounts.map(amount => ethers.utils.parseEther(amount.toString()));
-            const zero = ethers.utils.parseEther("0");
-            const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), zero);
+            const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), ethers.utils.parseEther("0"));
             let nonce = await this.web3.eth.getTransactionCount(wallet.address)
             // nonce = await this.web3.eth.getTransactionCount(wallet.address);
             let gas = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).estimateGas({
@@ -506,6 +504,7 @@ class BnbManager {
                 gasPrice:newGasPrice,
                 nonce: nonce
             });
+            console.log("gas estimation: "  , gas);
             const res = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).send({
                 from: wallet.address,
                 value: sumAmount.toString(),
