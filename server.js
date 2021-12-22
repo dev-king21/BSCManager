@@ -149,6 +149,7 @@ app.post('/api/tokenBalances', authorize(), async function(req,res) {
             url: url,
           })
           .then((response) => {
+            console.log(response.data.result)
             var tokenList = response.data.result.map(res => {
               return res.contractAddress;
             })

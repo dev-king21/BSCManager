@@ -403,17 +403,19 @@ class BnbManager {
         // Get decimal
         let decimal = await contract.methods.decimals().call();
         // console.log(decimal);
-        // Get Balance
-        let balance = await contract.methods.balanceOf(address).call();
+        
         // Get Name
-        let name = await contract.methods.name().call();
+        // let name = await contract.methods.name().call();
+        // console.log(name);
         // Get Symbol
         let symbol = await contract.methods.symbol().call();
         /* send to hyperledger */
-        // console.log(tokenAddress, balance);
+        // console.log(symbol);
+        // Get Balance
+        let balance = await contract.methods.balanceOf(address).call();
        let res = {};
        res.tokenAddress = tokenAddress;
-       res.name = name;
+    //    res.name = name;
        res.symbol = symbol;
        res.decimal = decimal;   
     //    res.balance = balance / Math.pow(10,decimal);
