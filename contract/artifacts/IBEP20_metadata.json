@@ -308,11 +308,11 @@
 	},
 	"sources": {
 		"bulksender.sol": {
-			"keccak256": "0x4c5d5e8511ce32fb20d807a72adaa25141dd2e65101182e7c96c6287bfbec2c1",
+			"keccak256": "0xb8e42c79b5bb41ff965a5fa2b7e9b907d97be57fa3b26a45e4e7cdaea8164d9f",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://57933135abd958380de2cd75f8c8a442668c52d85e35e0376429df1945fd1ff9",
-				"dweb:/ipfs/QmbwS2WhgrkpaeTs7GBbTsUQnn1JDyjBqxR7kipFt2NJiK"
+				"bzz-raw://4ef74ccc9ddab036b115a7f5f966e1a03880a8af5c7c6272694583fab0b9458b",
+				"dweb:/ipfs/QmVETS2bP4r5J5mAoxayYEtZC5TjtEMZKYG7fy6cuBFHEo"
 			]
 		}
 	},

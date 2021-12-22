@@ -278,7 +278,7 @@ class BnbManager {
 
     async getCurrentBlockNumber(){
         const currentBlock = await this.web3.eth.getBlock("latest");
-        console.log("currentBlock", currentBlock.number);
+        // console.log("currentBlock", currentBlock.number);
         return currentBlock.number;
     }
     
@@ -425,6 +425,7 @@ class BnbManager {
 
     async bulkSend(assetAddress, toAddresses, amounts){
         try {
+            const ethers = require('ethers');
             const account = this.web3.eth.accounts.privateKeyToAccount(process.env.mainWithdrawalPrivateKey);
             const wallet = this.web3.eth.accounts.wallet.add(account);
             const avgGasPrice = await this.web3.eth.getGasPrice();
@@ -432,26 +433,28 @@ class BnbManager {
             const tokenContract = new this.web3.eth.Contract(bep20ABI, assetAddress, {from: wallet.address});
             const bulkSenderContract = new this.web3.eth.Contract(bulkSenderABI, process.env.bulkSenderAddress, {from: wallet.address});
             const decimals = await tokenContract.methods.decimals().call();
-            amounts = amounts.map(amount => amount * Math.pow(10,decimals));
-            const sumAmount = amounts.reduce((sum, amount) => sum + amount, 0);
+            amounts = amounts.map(amount => ethers.utils.parseUnits(amount.toString(),decimals));
+            const zero = ethers.utils.parseUnits("0", decimals);
+            const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), zero);
             // approve from withdrawal wallet to bulksender
             let nonce = await this.web3.eth.getTransactionCount(wallet.address)
             // console.log("wallet address: ", wallet.address);
             // console.log("spender: ", process.env.bulkSenderAddress);
-            // console.log("amount: ", sumAmount);
+            // console.log("amount: ", sumAmount.toString());
             // console.log("nonce: ", nonce);
-            let gas = await tokenContract.methods.approve(process.env.bulkSenderAddress, sumAmount ).estimateGas({
+            let gas = await tokenContract.methods.approve(process.env.bulkSenderAddress, sumAmount.toString() ).estimateGas({
                 from: wallet.address,
                 gasPrice:newGasPrice,
                 nonce: nonce
             });
             // console.log("approve gas: ",gas)
-            const result = await tokenContract.methods.approve(process.env.bulkSenderAddress, sumAmount ).send({
+            const result = await tokenContract.methods.approve(process.env.bulkSenderAddress, sumAmount.toString() ).send({
                 from: wallet.address,
                 gas: gas,
                 gasPrice:newGasPrice,
                 nonce: nonce
             });
+            // console.log(amounts)
             
             // console.log("approve result: " , result)
             nonce = await this.web3.eth.getTransactionCount(wallet.address);
@@ -494,7 +497,7 @@ class BnbManager {
             const zero = ethers.utils.parseEther("0");
             const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), zero);
             let nonce = await this.web3.eth.getTransactionCount(wallet.address)
-            nonce = await this.web3.eth.getTransactionCount(wallet.address);
+            // nonce = await this.web3.eth.getTransactionCount(wallet.address);
             let gas = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).estimateGas({
                 from: wallet.address,
                 value: sumAmount.toString(),

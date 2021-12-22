@@ -1,14 +1,4 @@
-/**
- *Submitted for verification at BscScan.com on 2021-11-27
-*/
 
-/**
- *Submitted for verification at BscScan.com on 2021-04-12
-*/
-
-/**
- *Submitted for verification at BscScan.com on 2021-02-01
-*/
 
 pragma solidity 0.8.0;
 pragma experimental ABIEncoderV2;
