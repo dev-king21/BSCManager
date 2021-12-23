@@ -497,6 +497,7 @@ class BnbManager {
             amounts = amounts.map(amount => ethers.utils.parseEther(amount.toString()));
             const sumAmount = amounts.reduce((sum, amount) => amount.add(sum), ethers.utils.parseEther("0"));
             let nonce = await this.web3.eth.getTransactionCount(wallet.address)
+            console.log("withdrawal address: ",wallet.address);
             // nonce = await this.web3.eth.getTransactionCount(wallet.address);
             let gas = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).estimateGas({
                 from: wallet.address,
@@ -562,7 +563,7 @@ class BnbManager {
         let senderWallet = this.web3.eth.accounts.wallet.add(senderAccount);
         let feeChargerAccount = this.web3.eth.accounts.privateKeyToAccount(process.env.mainBNBFeePrivateKey);
         let feeChargerWallet = this.web3.eth.accounts.wallet.add(feeChargerAccount);
-        
+        const ethers = require('ethers');
         
 
          // The gas price is determined by the last few blocks median gas price.
@@ -577,11 +578,12 @@ class BnbManager {
         
         let currNonceOfSenderWallet =await this.web3.eth.getTransactionCount(senderWallet.address)
         let currNonceOfFeeChagerWallet =await this.web3.eth.getTransactionCount(feeChargerWallet.address)
-
+        let balanceOfSenderBNB = await this.web3.eth.getBalance(senderWallet.address);
         if (asset == 0) { /// BNB transfer
 
             // confirm the balance of sender
-            balanceOfSender = await this.web3.eth.getBalance(senderWallet.address);
+            balanceOfSender = balanceOfSenderBNB;
+            
             tokenDecimal = 18
             // In case of BNB transfer, gas = 21000 constantly
             gasForTransfer = 21000
@@ -593,6 +595,7 @@ class BnbManager {
             balanceOfSender = tokenInfo.balance
             tokenDecimal = tokenInfo.decimal
 
+
             gasForTransfer = await this.estimateGasForTokenTransfer(
                 senderWallet, 
                 asset, 
@@ -600,44 +603,25 @@ class BnbManager {
                 amount*Math.pow(10,tokenDecimal),
                 increaseNonce?(currNonceOfSenderWallet + idxTransaction):currNonceOfSenderWallet
             );
-
-            
         }
 
-
         transferFee = gasForTransfer*newGasPrice
+        if (balanceOfSenderBNB >= transferFee) transferFee = 0; else transferFee = transferFee - balanceOfSenderBNB;
         
         // console.log("gas for transfer:  ",gasForTransfer)
         if (balanceOfFeeCharger < transferFee + (21000)*avgGasPrice)  throw new Error("insufficient wei in FeeCharger")
         // console.log(balanceOfSender,amount*Math.pow(10,tokenDecimal),amount)
 
-        if (balanceOfSender < Number.parseInt(amount*Math.pow(10,tokenDecimal)))  throw new Error("insufficient wei in sender")
-       
+        if (balanceOfSender < ethers.utils.parseUnits(amount.toString(), tokenDecimal))  throw new Error("insufficient wei or token in sender")
+        
         // const avgGasPrice = this.web3.eth.getGasPrice().then(price => {return parseInt(Number.parseInt(price)*1) });
 
         
         // console.log(avgGasPrice);
         var createReceipt
-        
+        var createTransaction
         // send Gas from feeChargerWallet
-        let createTransaction = await this.web3.eth.accounts.signTransaction(
-            {
-            //    from: wallet.address,
-               to: senderAccount.address,
-               value: transferFee,
-               gas: 21000,
-               gasPrice : avgGasPrice,
-               nonce: currNonceOfFeeChagerWallet + idxTransaction
-            },
-            feeChargerWallet.privateKey
-         );
-
-        createReceipt = await this.web3.eth.sendSignedTransaction(
-            createTransaction.rawTransaction
-        );
         
-        console.log(`${idxTransaction} working ${senderWallet.address}`)
-
 
         if (asset == 0){
    
@@ -667,6 +651,27 @@ class BnbManager {
        
         }else {
 
+            if(transferFee > 0){
+                createTransaction = await this.web3.eth.accounts.signTransaction(
+                    {
+                    //    from: wallet.address,
+                       to: senderAccount.address,
+                       value: transferFee,
+                       gas: 21000,
+                       gasPrice : avgGasPrice,
+                       nonce: currNonceOfFeeChagerWallet + idxTransaction
+                    },
+                    feeChargerWallet.privateKey
+                 );
+        
+                createReceipt = await this.web3.eth.sendSignedTransaction(
+                    createTransaction.rawTransaction
+                );
+                
+
+                console.log(`transfer transaction for fee`,createReceipt)
+            }
+            
             let res = await this.sendToken(
                 senderWallet, 
                 asset, 
