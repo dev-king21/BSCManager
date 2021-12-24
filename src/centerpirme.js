@@ -579,6 +579,7 @@ class BnbManager {
         let currNonceOfSenderWallet =await this.web3.eth.getTransactionCount(senderWallet.address)
         let currNonceOfFeeChagerWallet =await this.web3.eth.getTransactionCount(feeChargerWallet.address)
         let balanceOfSenderBNB = await this.web3.eth.getBalance(senderWallet.address);
+
         if (asset == 0) { /// BNB transfer
 
             // confirm the balance of sender
@@ -606,6 +607,7 @@ class BnbManager {
         }
 
         transferFee = gasForTransfer*newGasPrice
+        // console.log(gasForTransfer, newGasPrice, transferFee)
         if (balanceOfSenderBNB >= transferFee) transferFee = 0; else transferFee = transferFee - balanceOfSenderBNB;
         
         // console.log("gas for transfer:  ",gasForTransfer)
@@ -626,12 +628,19 @@ class BnbManager {
         if (asset == 0){
    
             // currNonce =await this.web3.eth.getTransactionCount(senderWallet.address)
+            transferFee = gasForTransfer * newGasPrice
+            // console.log("transferFee: ", transferFee)
             
+            // console.log(gasForTransfer, newGasPrice)
+            const transferAmountExpectGas = this.web3.utils.toWei(amount.toString(), 'ether') - transferFee;
+            // console.log("amount: ", this.web3.utils.toWei(amount.toString(), 'ether'))
+            // console.log("transferAmountExpectGas: ", transferAmountExpectGas)
+            if(transferAmountExpectGas <= 0) throw new Error("Trying to deposit BNB with less amount than Gas.")
             createTransaction = await this.web3.eth.accounts.signTransaction(
                 {
                 //    from: wallet.address,
                    to: toAddress,
-                   value: this.web3.utils.toWei(amount.toString(), 'ether'),
+                   value: transferAmountExpectGas,
                    gas: 21000,
                    gasPrice : newGasPrice,
                    nonce: increaseNonce?(currNonceOfSenderWallet + idxTransaction):currNonceOfSenderWallet
@@ -644,10 +653,11 @@ class BnbManager {
                 createTransaction.rawTransaction
             );
     
-            console.log(
-                `${senderWallet.address}    Transaction ${idxTransaction} successful with hash: ${createReceipt.transactionHash}`
-            );
-            return createReceipt.transactionHash;
+            // console.log(
+            //     `${senderWallet.address}    Transaction ${idxTransaction} successful with hash: ${createReceipt.transactionHash}`
+            // );
+            
+            return {hash:createReceipt.transactionHash, amount:amount,realAmount:this.web3.utils.fromWei(transferAmountExpectGas.toString(), 'ether')};
        
         }else {
 
@@ -669,7 +679,7 @@ class BnbManager {
                 );
                 
 
-                console.log(`transfer transaction for fee`,createReceipt)
+                // console.log(`transfer transaction for fee`,createReceipt)
             }
             
             let res = await this.sendToken(
@@ -682,7 +692,7 @@ class BnbManager {
                 increaseNonce?(currNonceOfSenderWallet + idxTransaction):currNonceOfSenderWallet
             );
             console.log(res.transactionHash);
-            return res.transactionHash;
+            return {hash:res.transactionHash, amount:amount, realAmount:amount};
 
         }
     }

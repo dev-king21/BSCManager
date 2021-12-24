@@ -241,11 +241,12 @@ app.post('/api/depositAsset', authorize(), async function(req,res) {
             deposit.amount, 
             index,
             false
-          ).then(hash => resolve({
+          ).then(result => resolve({
             fromAddress:deposit.fromAddress, 
             asset: deposit.asset,
-            amount:deposit.amount, 
-            hash
+            amount:result.amount, 
+            realAmount: result.realAmount,
+            hash: result.hash
           }))
           .catch((err) => {
             resolve({
