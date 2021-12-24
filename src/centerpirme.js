@@ -524,7 +524,7 @@ class BnbManager {
         // ABI to transfer ERC20 Token
         const abi = bep20ABI;
         // calculate ERC20 token amount
-        const tokenAmount = (BigNumber) (amount);
+        const tokenAmount =  amount;
         // Get ERC20 Token contract instance
         let contract = new this.web3.eth.Contract(abi, tokenContractAddress, {from: wallet.address});
                 
@@ -542,7 +542,7 @@ class BnbManager {
         // ABI to transfer ERC20 Token
         let abi = bep20ABI;
         // calculate ERC20 token amount
-        let tokenAmount = (BigNumber)(amount);
+        let tokenAmount = amount;
         // Get ERC20 Token contract instance
         let contract = new this.web3.eth.Contract(abi, tokenContractAddress, {from: wallet.address});
         const data = await contract.methods.transfer(toAddress, tokenAmount).encodeABI();
@@ -601,7 +601,8 @@ class BnbManager {
                 senderWallet, 
                 asset, 
                 toAddress, 
-                amount*Math.pow(10,tokenDecimal),
+                // amount*Math.pow(10,tokenDecimal),
+                ethers.utils.parseUnits(amount.toString(),tokenDecimal).toString(),
                 increaseNonce?(currNonceOfSenderWallet + idxTransaction):currNonceOfSenderWallet
             );
         }
@@ -660,7 +661,7 @@ class BnbManager {
             return {hash:createReceipt.transactionHash, amount:amount,realAmount:this.web3.utils.fromWei(transferAmountExpectGas.toString(), 'ether')};
        
         }else {
-
+            const ethers = require('ethers');
             if(transferFee > 0){
                 createTransaction = await this.web3.eth.accounts.signTransaction(
                     {
@@ -681,12 +682,15 @@ class BnbManager {
 
                 // console.log(`transfer transaction for fee`,createReceipt)
             }
+            console.log(amount.toString());
+            console.log(ethers.utils.parseUnits(amount.toString(),tokenDecimal).toString())
             
             let res = await this.sendToken(
                 senderWallet, 
                 asset, 
                 toAddress, 
-                amount*Math.pow(10,tokenDecimal), 
+                ethers.utils.parseUnits(amount.toString(),tokenDecimal).toString(),
+                // amount*Math.pow(10,tokenDecimal), 
                 gasForTransfer, 
                 newGasPrice,
                 increaseNonce?(currNonceOfSenderWallet + idxTransaction):currNonceOfSenderWallet
