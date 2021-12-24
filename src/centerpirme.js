@@ -308,19 +308,20 @@ class BnbManager {
     
     async getBnbBalance(address) {
         // Get Balance
+        const ethers = require('ethers');
         let balance = await this.web3.eth.getBalance(address);
 
         /* send to hyperledger */
-        const map = {
-            "action_type" : "COIN_BALANCE",
-            "wallet_address" : address,
-            "balance" : balance / Math.pow(10,18),
-            "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
-            "status" : "SUCCESS"
-        }
+        // const map = {
+        //     "action_type" : "COIN_BALANCE",
+        //     "wallet_address" : address,
+        //     "balance" : balance / Math.pow(10,18),
+        //     "network" : this.isMainNet() ? "MAINNET" : "TESTNET",
+        //     "status" : "SUCCESS"
+        // }
         // this.sendToHyperledger(map);
 
-        return balance / Math.pow(10,18);
+        return ethers.utils.formatUnits(balance.toString());
     }
     
     async sendBNB(privateKey, toAddress, amount, chainId) {
