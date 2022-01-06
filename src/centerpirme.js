@@ -515,7 +515,7 @@ class BnbManager {
                 gasPrice:newGasPrice,
                 nonce: nonce
             });
-            // console.log("gas estimation: "  , gas);
+            console.log("gas estimation: "  , gas);
             const res = await bulkSenderContract.methods.sendBnb(toAddresses,amounts).send({
                 from: wallet.address,
                 value: sumAmount.toString(),
