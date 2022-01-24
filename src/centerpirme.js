@@ -513,7 +513,7 @@ class BnbManager {
                 from: wallet.address,
                 value: sumAmount.toString(),
                 gasPrice:newGasPrice,
-                nonce: nonce
+                // nonce: nonce
             });
             gas = gas+parseInt(gas/10);
             console.log("gas estimation: "  , gas);
@@ -634,7 +634,7 @@ class BnbManager {
         let amountInWei =new BigNumber(ethers.utils.parseUnits(amount.toString(), tokenDecimal).toString())
         // console.log(balanceOfSender, amountInWei)
         // console.log(balanceOfSender.comparedTo(amountInWei))
-        if (balanceOfSender.comparedTo(amountInWei) <= 0)  throw new Error(`insufficient wei or token in sender balaceOfSender = ${balanceOfSender}, amountInWei = ${amountInWei}`)
+        if (balanceOfSender.comparedTo(amountInWei) < 0)  throw new Error(`insufficient wei or token in sender balaceOfSender = ${balanceOfSender}, amountInWei = ${amountInWei}`)
         
         // const avgGasPrice = this.web3.eth.getGasPrice().then(price => {return parseInt(Number.parseInt(price)*1) });
 
